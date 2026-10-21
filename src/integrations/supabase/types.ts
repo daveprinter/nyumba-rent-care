@@ -374,6 +374,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          other_fees: Json
           property_id: string
           rent: number
         }
@@ -381,6 +382,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          other_fees?: Json
           property_id: string
           rent?: number
         }
@@ -388,6 +390,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          other_fees?: Json
           property_id?: string
           rent?: number
         }
