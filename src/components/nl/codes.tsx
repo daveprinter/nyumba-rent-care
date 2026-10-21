@@ -18,6 +18,7 @@ export function AccessCodesPanel({ d }: { d: AppData }) {
     },
   });
   const [code, setCode] = useState("");
+  const [ctCode, setCtCode] = useState("");
   const mine = q.data?.find((r) => r.role === d.role);
   const caretaker = q.data?.find((r) => r.role === "caretaker");
 
@@ -31,6 +32,21 @@ export function AccessCodesPanel({ d }: { d: AppData }) {
     if (error) { toast.error(error.message); return; }
     toast.success("Access code changed");
     setCode("");
+    q.refetch();
+  }
+
+  async function saveCaretaker(e: React.FormEvent) {
+    e.preventDefault();
+    if (!/^[0-9]{4,8}$/.test(ctCode)) { toast.error("Code must be 4–8 digits"); return; }
+    const { data, error } = await supabase
+      .from("staff_codes")
+      .update({ code: ctCode, updated_at: new Date().toISOString() })
+      .eq("role", "caretaker")
+      .select("role");
+    if (error) { toast.error(error.message); return; }
+    if (!data?.length) { toast.error("Could not change the caretaker code"); return; }
+    toast.success("Caretaker access code changed");
+    setCtCode("");
     q.refetch();
   }
 
@@ -58,6 +74,16 @@ export function AccessCodesPanel({ d }: { d: AppData }) {
           <p className="mt-2 text-sm text-muted-foreground">
             Share this with your caretaker so they can log in.
           </p>
+          <form onSubmit={saveCaretaker} className="mt-4 space-y-3">
+            <Label htmlFor="ctcode">New caretaker code (4–8 digits)</Label>
+            <Input
+              id="ctcode"
+              inputMode="numeric"
+              value={ctCode}
+              onChange={(e) => setCtCode(e.target.value.replace(/\D/g, ""))}
+            />
+            <Button type="submit">Change caretaker code</Button>
+          </form>
         </Section>
       )}
     </div>

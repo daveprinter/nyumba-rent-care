@@ -16,6 +16,7 @@ import {
 } from "@/components/nl/shared";
 import { AccessCodesPanel } from "@/components/nl/codes";
 import logo from "@/assets/logo.png";
+import { usePersistentState } from "@/hooks/use-persistent-state";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -94,6 +95,8 @@ function Dashboard() {
   }
 
   const tabs = tabsFor[d.role];
+  const [tab, setTab] = usePersistentState(`nl:tab:${d.role}`, tabs[0]?.id ?? "overview");
+  const activeTab = tabs.some((t) => t.id === tab) ? tab : (tabs[0]?.id ?? "overview");
   const unread = d.messages.filter((m) => m.recipient_id === d.uid && !m.read).length;
 
   return (
@@ -127,7 +130,7 @@ function Dashboard() {
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">
-        <Tabs defaultValue={tabs[0]?.id ?? "overview"}>
+        <Tabs value={activeTab} onValueChange={setTab}>
           <TabsList className="mb-6 h-auto flex-wrap">
             {tabs.map((t) => (
               <TabsTrigger key={t.id} value={t.id}>

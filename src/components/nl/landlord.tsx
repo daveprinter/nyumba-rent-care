@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { usePersistentState } from "@/hooks/use-persistent-state";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -114,6 +115,17 @@ function PropertyCard({ d, pid }: { d: AppData; pid: string }) {
   const refresh = useRefresh();
   const p = d.properties.find((x) => x.id === pid)!;
   const rooms = d.rooms.filter((r) => r.property_id === pid);
+  const [tpl, setTpl] = usePersistentState(`nl:room-tpl:${pid}`, {
+    prefix: "A",
+    start: 1,
+    count: 1,
+    rent: "",
+  });
+  const [names, setNames] = useState<string[]>([]);
+  const count = Math.min(50, Math.max(1, Number(tpl.count) || 1));
+  useEffect(() => {
+    setNames(Array.from({ length: count }, (_, i) => `${tpl.prefix}${Number(tpl.start || 1) + i}`));
+  }, [tpl.prefix, tpl.start, count]);
 
   async function setCaretaker(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -131,20 +143,20 @@ function PropertyCard({ d, pid }: { d: AppData; pid: string }) {
     )
       refresh();
   }
-  async function addRoom(e: React.FormEvent<HTMLFormElement>) {
+  async function addRooms(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const form = e.currentTarget;
-    const f = new FormData(form);
+    const list = names.map((n) => n.trim()).filter(Boolean);
+    if (list.length === 0) { toast.error("Enter at least one room number"); return; }
+    if (new Set(list).size !== list.length) { toast.error("Room numbers must be different"); return; }
     if (
       await run(
         () =>
           supabase
             .from("rooms")
-            .insert({ property_id: pid, name: String(f.get("name")), rent: Number(f.get("rent")) }),
-        "Room added",
+            .insert(list.map((name) => ({ property_id: pid, name, rent: Number(tpl.rent) }))),
+        list.length > 1 ? `${list.length} rooms added` : "Room added",
       )
     ) {
-      form.reset();
       refresh();
     }
   }
@@ -174,11 +186,41 @@ function PropertyCard({ d, pid }: { d: AppData; pid: string }) {
           <RoomRow key={r.id} d={d} room={r} />
         ))}
       </div>
-      <form onSubmit={addRoom} className="mt-4 grid gap-2 md:grid-cols-[1fr_160px_auto]">
-        <Input name="name" placeholder="Room e.g. A1" required />
-        <Input name="rent" type="number" min={0} placeholder="Monthly rent" required />
+      <form onSubmit={addRooms} className="mt-4 space-y-3 rounded-xl border p-3">
+        <p className="text-sm font-semibold">Add rooms (same rent for all copies)</p>
+        <div className="grid gap-2 md:grid-cols-4">
+          <label className="text-xs">
+            How many rooms
+            <Input type="number" min={1} max={50} value={tpl.count}
+              onChange={(e) => setTpl({ ...tpl, count: Number(e.target.value) })} />
+          </label>
+          <label className="text-xs">
+            Room prefix
+            <Input value={tpl.prefix} placeholder="e.g. A"
+              onChange={(e) => setTpl({ ...tpl, prefix: e.target.value })} />
+          </label>
+          <label className="text-xs">
+            Starting number
+            <Input type="number" min={0} value={tpl.start}
+              onChange={(e) => setTpl({ ...tpl, start: Number(e.target.value) })} />
+          </label>
+          <label className="text-xs">
+            Monthly rent (each)
+            <Input type="number" min={0} required value={tpl.rent}
+              onChange={(e) => setTpl({ ...tpl, rent: e.target.value })} />
+          </label>
+        </div>
+        <div>
+          <p className="mb-1 text-xs text-muted-foreground">Room numbers (edit any)</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-6">
+            {names.map((n, i) => (
+              <Input key={i} value={n} aria-label={`Room ${i + 1} number`}
+                onChange={(e) => setNames(names.map((x, j) => (j === i ? e.target.value : x)))} />
+            ))}
+          </div>
+        </div>
         <Button type="submit" variant="secondary">
-          Add room
+          {count > 1 ? `Add ${count} rooms` : "Add room"}
         </Button>
       </form>
     </Section>

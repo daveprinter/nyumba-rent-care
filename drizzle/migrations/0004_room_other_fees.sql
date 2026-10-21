@@ -1,0 +1,1 @@
+ALTER TABLE public.rooms ADD COLUMN IF NOT EXISTS other_fees jsonb NOT NULL DEFAULT '[]'::jsonb;
