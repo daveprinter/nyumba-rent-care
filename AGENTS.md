@@ -14,3 +14,5 @@
 - Payment state changes only through SQL functions `send_payment` and `review_payment` (tenants cannot update payments) — why: prevents tenants self-approving.
 - Dashboard loads all role-visible data in one query (`appQuery` in src/lib/nyumba.ts) and invalidates it on realtime messages/payments changes — why: simple and RLS already scopes rows.
 - Monthly bills: idempotent `generate_monthly_bills()` run by pg_cron on the 1st and on dashboard load.
+- Maintenance AI uses authenticated server functions with server-side staff/property checks and streamed structured Gateway output; managers review drafts before saving and nothing is auto-sent — why: protect tenant data and keep operational decisions human-reviewed.
+- AI provider access/credit blocks persist in `ai_access_state` and stop subsequent calls until the owner restores access and clears the block — why: prevent repeated billed or denied work across reloads.
