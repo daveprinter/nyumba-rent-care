@@ -4,6 +4,9 @@ import { Home, KeyRound, Wallet, Wrench, MessageCircle, Building2 } from "lucide
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { staffLogin } from "@/lib/staff.functions";
+import { useServerFn } from "@tanstack/react-start";
+import { PasswordField } from "@/components/nl/password-field";
+import { validPassword } from "@/lib/password";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,12 +42,13 @@ const floaters = [Home, KeyRound, Wallet, Wrench, MessageCircle, Building2];
 
 function Landing() {
   const navigate = useNavigate();
+  const loginStaff = useServerFn(staffLogin);
   const [loading, setLoading] = useState(false);
   const [role, setRole] = useState<"tenant" | "landlord" | "caretaker">("tenant");
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard" });
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) navigate({ to: "/dashboard", replace: true });
     });
   }, [navigate]);
 
@@ -52,37 +56,46 @@ function Landing() {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: String(f.get("email")),
-      password: String(f.get("password")),
-    });
-    setLoading(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: String(f.get("email")).trim(),
+        password: String(f.get("password")),
+      });
+      if (error) throw error;
+      navigate({ to: "/dashboard", replace: true });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to log in. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    navigate({ to: "/dashboard" });
   }
 
   async function signUp(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
+    const password = String(f.get("password"));
+    if (!validPassword(password)) {
+      toast.error("Please meet all five password requirements.");
+      return;
+    }
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({
-      email: String(f.get("email")),
-      password: String(f.get("password")),
+    try {
+      const { data, error } = await supabase.auth.signUp({
+      email: String(f.get("email")).trim(),
+      password,
       options: {
         emailRedirectTo: window.location.origin,
         data: { full_name: String(f.get("name")), phone: String(f.get("phone")) },
       },
     });
-    setLoading(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+      if (error) throw error;
+      if (data.session) navigate({ to: "/dashboard", replace: true });
+      else toast.info("Check your email to confirm your existing account, then log in.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to create your account. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    if (data.session) navigate({ to: "/dashboard" });
-    else toast.error("Could not sign you in. Please log in.");
   }
 
   async function staffSignIn(e: React.FormEvent<HTMLFormElement>) {
@@ -90,12 +103,12 @@ function Landing() {
     const code = String(new FormData(e.currentTarget).get("code"));
     setLoading(true);
     try {
-      const { tokenHash } = await staffLogin({
+      const { tokenHash } = await loginStaff({
         data: { role: role as "landlord" | "caretaker", code },
       });
       const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "magiclink" });
       if (error) throw error;
-      navigate({ to: "/dashboard" });
+      navigate({ to: "/dashboard", replace: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Login failed");
     } finally {
@@ -119,7 +132,7 @@ function Landing() {
       <div className="absolute inset-0 bg-hero-overlay" />
       <div className="pointer-events-none absolute inset-0">
         {Array.from({ length: 14 }).map((_, i) => {
-          const Icon = floaters[i % floaters.length]!;
+          const Icon = floaters[i % floaters.length] ?? Home;
           return (
             <Icon
               key={i}
@@ -184,7 +197,7 @@ function Landing() {
               <TabsContent value="signin">
                 <form onSubmit={signIn} className="mt-4 space-y-4">
                   <Field name="email" label="Email" type="email" />
-                  <Field name="password" label="Password" type="password" />
+                  <PasswordField />
                   <Button type="submit" className="w-full" disabled={loading}>
                     Log in
                   </Button>
@@ -195,7 +208,7 @@ function Landing() {
                   <Field name="name" label="Full name" />
                   <Field name="phone" label="Phone (M-PESA)" />
                   <Field name="email" label="Email" type="email" />
-                  <Field name="password" label="Password" type="password" />
+                  <PasswordField signup />
                   <Button type="submit" className="w-full" disabled={loading}>
                     Create tenant account
                   </Button>
