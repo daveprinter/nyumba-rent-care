@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import logo from "@/assets/logo.png";
 import heroImg from "@/assets/hero.jpg";
 import heroVideo from "@/assets/hero.mp4.asset.json";
+import heroWebm from "@/assets/hero.webm.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -106,13 +107,15 @@ function Landing() {
     <main className="relative min-h-screen overflow-hidden bg-overlay text-overlay-foreground">
       <video
         className="absolute inset-0 h-full w-full object-cover"
-        src={heroVideo.url}
         poster={heroImg}
         autoPlay
         muted
         loop
         playsInline
-      />
+      >
+        <source src={heroWebm.url} type="video/webm" />
+        <source src={heroVideo.url} type="video/mp4" />
+      </video>
       <div className="absolute inset-0 bg-hero-overlay" />
       <div className="pointer-events-none absolute inset-0">
         {Array.from({ length: 14 }).map((_, i) => {
