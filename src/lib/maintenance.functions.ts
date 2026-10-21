@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest, setResponseHeader } from "@tanstack/react-start/server";
-import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { canManageMaintenance, maintenanceInput, triageSchema } from "./maintenance-ai";
 
@@ -61,8 +60,8 @@ export const saveManagerMaintenance = createServerFn({ method: "POST" })
     const { data: request, error: saveError } = await context.supabase.from("maintenance_requests").insert({
       lease_id: data.leaseId, tenant_id: lease.tenant_id, title: data.title, description: data.description,
       reported_by: context.userId, ai_generated: data.triage !== null,
-      category: data.triage?.category, priority: data.triage?.priority, priority_reason: data.triage?.priorityReason,
-      recommended_actions: data.triage?.recommendedActions, response_draft: data.triage?.responseDraft,
+      category: data.triage?.category ?? null, priority: data.triage?.priority ?? null, priority_reason: data.triage?.priorityReason ?? null,
+      recommended_actions: data.triage?.recommendedActions ?? null, response_draft: data.triage?.responseDraft ?? null,
     }).select("id").single();
     if (saveError || !request) throw new Error(saveError?.message ?? "Request could not be saved.");
     return { id: request.id };
