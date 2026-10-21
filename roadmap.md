@@ -1,4 +1,7 @@
 # Tasks
+- [ ] Add room duplication with shared rent/fees and editable room numbers.
+- [ ] Let landlords change the caretaker access code and verify permissions.
+- [ ] Save selected settings across refresh/reopening and verify signed-in flows.
 - [x] Fix tenant signup/signin redirects and enable immediate signup without email confirmation.
 - [x] Apply requested signup form password rules, live progress and show/hide controls; disable leaked-password rejection.
 - [x] Verify real tenant signup with six-character mixed password, subsequent sign-in, session reload and all five tenant tabs; 16 tests pass.
