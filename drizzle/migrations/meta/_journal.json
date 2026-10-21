@@ -22,6 +22,13 @@
       "when": 1792582777955,
       "tag": "0002_maintenance_ai_triage",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792599271666,
+      "tag": "0003_landlord_update_caretaker_code",
+      "breakpoints": true
     }
   ]
 }
