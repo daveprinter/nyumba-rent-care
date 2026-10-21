@@ -23,12 +23,12 @@ export function AccessCodesPanel({ d }: { d: AppData }) {
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    if (!/^[0-9]{4,8}$/.test(code)) return toast.error("Code must be 4–8 digits");
+    if (!/^[0-9]{4,8}$/.test(code)) { toast.error("Code must be 4–8 digits"); return; }
     const { error } = await supabase
       .from("staff_codes")
       .update({ code, updated_at: new Date().toISOString() })
       .eq("role", d.role as "landlord" | "caretaker");
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Access code changed");
     setCode("");
     q.refetch();
