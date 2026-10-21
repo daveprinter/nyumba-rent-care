@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { MOVERS_URL, contacts, leaseInfo, nameOf, type AppData } from "@/lib/nyumba";
 import { Empty, Section, Status, fmtDate, run, useRefresh } from "./common";
+import { MaintenanceComposer } from "./maintenance-composer";
+import { priorityOrder } from "@/lib/maintenance-ai";
 
 export function MaintenancePanel({ d }: { d: AppData }) {
   const refresh = useRefresh();
@@ -13,12 +15,13 @@ export function MaintenancePanel({ d }: { d: AppData }) {
   async function raise(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
+    if (!lease) return;
     const f = new FormData(form);
     if (
       await run(
         () =>
           supabase.from("maintenance_requests").insert({
-            lease_id: lease!.id,
+            lease_id: lease.id,
             tenant_id: d.uid,
             title: String(f.get("title")),
             description: String(f.get("description")),
@@ -42,10 +45,11 @@ export function MaintenancePanel({ d }: { d: AppData }) {
       refresh();
   }
   const list = [...d.maintenance].sort(
-    (a, b) => Number(a.status === "closed") - Number(b.status === "closed"),
+    (a, b) => Number(a.status === "closed") - Number(b.status === "closed") || priorityOrder(a.priority) - priorityOrder(b.priority),
   );
   return (
     <div className="space-y-6">
+      {d.role !== "tenant" && <Section title="Enter a tenant maintenance request"><MaintenanceComposer d={d} /></Section>}
       {d.role === "tenant" && lease && (
         <Section title="Report a problem">
           <form onSubmit={raise} className="space-y-2">
@@ -69,6 +73,10 @@ export function MaintenancePanel({ d }: { d: AppData }) {
                     <Status value={m.status} />
                   </div>
                   <p className="text-sm text-muted-foreground">{m.description}</p>
+                  {m.priority && <p className="mt-2 text-sm font-semibold capitalize">{m.priority} priority · {m.category}</p>}
+                  {d.role !== "tenant" && m.priority_reason && <p className="mt-1 text-sm text-muted-foreground">{m.priority_reason}</p>}
+                  {d.role !== "tenant" && Array.isArray(m.recommended_actions) && <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm">{m.recommended_actions.map((a, i) => typeof a === "string" ? <li key={i}>{a}</li> : null)}</ol>}
+                  {d.role !== "tenant" && m.response_draft && <div className="mt-3 border-t pt-3"><p className="text-xs font-semibold text-muted-foreground">Tenant response · draft</p><p className="mt-1 whitespace-pre-wrap text-sm">{m.response_draft}</p></div>}
                   <p className="mt-1 text-xs text-muted-foreground">
                     {nameOf(d, m.tenant_id)} · {property?.name} {room?.name} ·{" "}
                     {fmtDate(m.created_at)}

@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_access_state: {
+        Row: {
+          blocked: boolean
+          id: string
+          message: string | null
+          status: number | null
+          updated_at: string
+        }
+        Insert: {
+          blocked?: boolean
+          id: string
+          message?: string | null
+          status?: number | null
+          updated_at?: string
+        }
+        Update: {
+          blocked?: boolean
+          id?: string
+          message?: string | null
+          status?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bills: {
         Row: {
           amount: number
@@ -98,31 +122,52 @@ export type Database = {
       }
       maintenance_requests: {
         Row: {
+          ai_generated: boolean
+          category: string | null
           closed_at: string | null
           created_at: string
           description: string
           id: string
           lease_id: string
+          priority: string | null
+          priority_reason: string | null
+          recommended_actions: Json | null
+          reported_by: string | null
+          response_draft: string | null
           status: string
           tenant_id: string
           title: string
         }
         Insert: {
+          ai_generated?: boolean
+          category?: string | null
           closed_at?: string | null
           created_at?: string
           description?: string
           id?: string
           lease_id: string
+          priority?: string | null
+          priority_reason?: string | null
+          recommended_actions?: Json | null
+          reported_by?: string | null
+          response_draft?: string | null
           status?: string
           tenant_id?: string
           title: string
         }
         Update: {
+          ai_generated?: boolean
+          category?: string | null
           closed_at?: string | null
           created_at?: string
           description?: string
           id?: string
           lease_id?: string
+          priority?: string | null
+          priority_reason?: string | null
+          recommended_actions?: Json | null
+          reported_by?: string | null
+          response_draft?: string | null
           status?: string
           tenant_id?: string
           title?: string

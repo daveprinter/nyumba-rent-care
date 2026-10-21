@@ -23,6 +23,8 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
       { title: "Dashboard — NyumbaLink" },
       { name: "description", content: "Your NyumbaLink rent, tenants, repairs and messages." },
       { property: "og:title", content: "Dashboard — NyumbaLink" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       {
         property: "og:description",
         content: "Your NyumbaLink rent, tenants, repairs and messages.",
@@ -75,6 +77,9 @@ function Dashboard() {
       .on("postgres_changes", { event: "*", schema: "public", table: "payments" }, () =>
         qc.invalidateQueries({ queryKey: ["nyumba"] }),
       )
+      .on("postgres_changes", { event: "*", schema: "public", table: "maintenance_requests" }, () =>
+        qc.invalidateQueries({ queryKey: ["nyumba"] }),
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
@@ -122,7 +127,7 @@ function Dashboard() {
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">
-        <Tabs defaultValue={tabs[0]!.id}>
+        <Tabs defaultValue={tabs[0]?.id ?? "overview"}>
           <TabsList className="mb-6 h-auto flex-wrap">
             {tabs.map((t) => (
               <TabsTrigger key={t.id} value={t.id}>
